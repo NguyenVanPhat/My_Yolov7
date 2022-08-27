@@ -206,7 +206,7 @@ if __name__ == '__main__':
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--no-trace', action='store_true', help='don`t trace model')
     opt = parser.parse_args()
-    print(opt)
+    # print(opt)
     # check_requirements(exclude=('pycocotools', 'thop'))
 
     with torch.no_grad():
