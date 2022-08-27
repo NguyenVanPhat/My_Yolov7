@@ -16,24 +16,25 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized,
 
 
 def phat_print(name_variable, variable):
+    print("------------------------------------------ "+"BIẾN "+name_variable+" ------------------------------------------")
     try:
-        print(name_variable + " type: " + "---" + str(type(variable)) + "---")
+        print("TYPE: " + "---" + str(type(variable)) + "---")
     except:
         print("ko hien thi duoc TYPE()")
     try:
-        print(name_variable + " len: " + "---" + str(len(variable)) + "---")
+        print("LEN: " + "---" + str(len(variable)) + "---")
     except:
         print("ko hien thi duoc LEN()")
     try:
-        print(name_variable + " shape: " + "---" + str(variable.shape) + "---")
+        print("SHAPE: " + "---" + str(variable.shape) + "---")
     except:
         print("ko hien thi duoc SHAPE()")
     try:
-        print(name_variable + " value: ", variable)
+        print("VALUE: ", variable)
     except:
         print("ko hien thi duoc VALUE")
     finally:
-        print("-------- ket thuc {0} ---------".format(name_variable))
+        print("------------------------------------------ KẾT THÚC BIẾN {0} ------------------------------------------".format(name_variable))
 
 
 def detect(save_img=False):
