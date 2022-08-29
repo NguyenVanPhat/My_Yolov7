@@ -256,6 +256,7 @@ def attempt_load(weights, map_location=None):
     else:
         print('Ensemble created with %s\n' % weights)
         for k in ['names', 'stride']:
+            # thêm 2 attribute là "names" và "stride" cho def attempt_load() này
             setattr(model, k, getattr(model[-1], k))
         return model  # return ensemble
 

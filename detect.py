@@ -16,7 +16,7 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized,
 
 
 def phat_print(name_variable, variable):
-    print("------------------------------------------ "+"BIẾN "+name_variable+" ------------------------------------------")
+    print("\n------------------------------------------ "+"BIẾN "+name_variable+" ------------------------------------------")
     try:
         print("TYPE: " + "---" + str(type(variable)) + "---")
     except:
@@ -38,6 +38,8 @@ def phat_print(name_variable, variable):
 
 
 def detect(save_img=False):
+    # "save_txt" có Type: bool, mặc định là False
+    # "trace" có Type: bool, mặc định là True
     source, weights, view_img, save_txt, imgsz, trace = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, not opt.no_trace
     save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
@@ -48,16 +50,21 @@ def detect(save_img=False):
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Initialize
-    set_logging()
+    set_logging() # print thông tin hệ thống như: "YOLOR 🚀 c5a68aa torch 1.12.1+cu113 CPU..."
     device = select_device(opt.device)
+    # "half" = False nếu  đang sử dụng cpu và "half" = "tên gpu" nếu có sử dụng GPU
     half = device.type != 'cpu'  # half precision only supported on CUDA
 
     # Load model
+    # khởi tạo mô hình và nạp trọng số đã truyền vào
     model = attempt_load(weights, map_location=device)  # load FP32 model
     stride = int(model.stride.max())  # model stride
     imgsz = check_img_size(imgsz, s=stride)  # check img_size
 
+    # "trace" = True, Nếu là False thì model sẽ vẫn là "model = attempt_load()" như ở trên
     if trace:
+        # khởi tạo Trace model và kế thừa tất cả attribute của model cũ là "model = attempt_load()"
+        # vẫn chưa biết vai trò của model này trong Yolov7
         model = TracedModel(model, device, opt.img_size)
 
     if half:
@@ -76,20 +83,46 @@ def detect(save_img=False):
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz, stride=stride)
     else:
+        # "dataset": có type: <class 'utils.datasets.LoadImages'>
+        # dùng để lấy ra dữ liệu theo từng frame thành 4 biến "path, img, im0s, vid_cap"
+        # lấy frame tới đâu xử lý ngày tới đó
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
 
     # Get names and colors
+    # "hasattr" kiểm tra xem đối tượng có attribute 'module' hay ko
+    # Nếu "model = attempt_load()" hoặc "model = TracedModel()" sẽ chỉ sử dụng được "model.names"
+    # biến "names" lúc này sẽ get attribute "names" của model
+    # biến "names" có TYPE=list, LEN=80, VALUE=['person', 'bicycle', 'car'...]
     names = model.module.names if hasattr(model, 'module') else model.names
+    # "colors" có TYPE=list, LEN=80, VALUE=[[239, 9, 93], [153, 225, 34], [152, 194, 182]...]
+    # "colors" chứa màu cho từng classes, list colors sẽ tự động thay đổi mỗi lần chạy file detect.py
     colors = [[random.randint(0, 255) for _ in range(3)] for _ in names]
 
     # Run inference
+    # định nghĩa "inference": là quá trình phân loại và localization(bản địa hoá) từng đối
+    # tượng xuất hiện trong image.
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     old_img_w = old_img_h = imgsz
     old_img_b = 1
 
+    # đặt t0 là thời gian bắt đầu chạy
     t0 = time.time()
+    # path là đường dẫn tới image/video đầu vào, không bị thay đổi trong suốt vòng lặp
+    # -----------------------------------------------
+    # im0s là image đầu vào
+    # nếu là video thì im0s sẽ lần lượt là từng frame trong video...
+    # hình ảnh im0s có type: (numpy.ndarray)
+    # có shape = (1080, 1920, 3)
+    # -----------------------------------------------
+    # img là image đầu vào đã được resize và xử lý để có shape phù hợp với thuật toán...
+    # nếu là video thì img sẽ lần lượt là từng frame trong video...
+    # hình ảnh img có type: (numpy.ndarray)
+    # giả sử đầu vào có shape = (1080, 1920, 3) thì img sẽ chỉ còn shape = (3, 384, 640)
+    # -----------------------------------------------
+    # vid_cap có type: class 'cv2.VideoCapture'
     for path, img, im0s, vid_cap in dataset:
+        # đang chỉnh sửa từng image từ trong "dataset" trước khi đưa vào model để predict
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -195,7 +228,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--view-img', action='store_true', help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
-    parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
+    parser.add_argument('--save-conf', action='store_true', help='save confidences (% accuracy predict of class) in --save-txt labels')
     parser.add_argument('--nosave', action='store_true', help='do not save images/videos')
     parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
     parser.add_argument('--agnostic-nms', action='store_true', help='class-agnostic NMS')
