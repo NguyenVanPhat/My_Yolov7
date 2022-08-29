@@ -61,7 +61,7 @@ def detect(save_img=False):
     stride = int(model.stride.max())  # model stride
     imgsz = check_img_size(imgsz, s=stride)  # check img_size
 
-    # "trace" = True, Nếu là False thì model sẽ vẫn là "model = attempt_load()" như ở trên
+    # "trace" mặc định = True, Nếu là False thì model sẽ vẫn là "model = attempt_load()" như ở trên
     if trace:
         # khởi tạo Trace model và kế thừa tất cả attribute của model cũ là "model = attempt_load()"
         # vẫn chưa biết vai trò của model này trong Yolov7
@@ -140,10 +140,36 @@ def detect(save_img=False):
 
         # Inference
         t1 = time_synchronized()
+        # "pred" có TYPE=<class 'torch.Tensor'>, SHAPE=[1, 15120, 85]
+        # Với mỗi img(3, 384, 640) truyền vào model(img, augment=opt.augment) sẽ trả ra 1 tuple có LEN=2:
+        # - Phần tử đầu tiên là được gán vào biến "pred" và có là 1 Tensor có SHAPE=[1, 15120, 85]
+        # - Phần tử thứ 2 là 1 list có LEN=3 chứa 3 Tensor khác nhau:
+        #   + Tensor 1 có SHAPE=[1, 3, 48, 80, 85]
+        #   + Tensor 2 có SHAPE=[1, 3, 24, 40, 85]
+        #   + Tensor 3 có SHAPE=[1, 3, 12, 20, 85]
+        # --> chú ý: các thông số này áp dụng với thiết đặt chỉ detect 1 classes là ["person"].
+        # trong ví dụ video đầu vào có 6 người được phát hiện
         pred = model(img, augment=opt.augment)[0]
+        # "time_synchronized()" để lấy thời giạn chạy hiện tại
         t2 = time_synchronized()
 
-        # Apply NMS
+        # Apply NMS viết tắt của Non-Maximum Suppression: là 1 method trong thị giác máy tính giúp chọn...
+        # một thực thể duy nhất trong nhiều thực thể chồng chéo lên nhau (thực thể trong bài này là...
+        # bounding boxes). Phương pháp là loại bỏ các thực thể nằm dưới một giới hạn xác xuất(%) đã cho sẵn..
+        # nếu giới hạn xác xuất càng cao thì càng khắt khe trong việc chọn thực thể hay nói cách khác..
+        # số lượng thực thể được chọn sẽ ít đi, chỉ những thực thể có xác xuất cao đáng tin cậy mới được chọn.
+        # ----------------------------------------------------------------------------------------
+        # "opt.conf_thres" mặc định là 0.25(float)
+        # "opt.iou_thres" mặc định là 0.45(float)
+        # "opt.classes" mặc định là None(nghĩa là detect tất các classes có thể)
+        # ----------------------------------------------------------------------------------------
+        # với mỗi "pred"([1, 15120, 85]) bên trên non_max_suppression() sẽ trả ra một list of detections..
+        # list này chứa duy nhất 1 Tensor có SHAPE=[n, 6] với n ở đây là số đối tượng phát hiện được..
+        # trong image/frame. số 6 là số lượng thông số kỹ thuật cho mỗi object được phát hiện cụ thể..
+        # mỗi object là 1 row trong Tensor có dạng:..
+        # ------[x_toạ độ tâm, y_toạ độ tâm, chiều cao_boxes, chiều rộng_boxes, confident, classes]------
+        # --> lưu ý: những thông số kỹ thuật trên (toạ độ tâm, chiều cao...) đều chưa được mã hoá thành định dạng..
+        # theo chuẩn của Yolo, vẫn đang trình bày dưới dạng giá trị pixel và giá trị float
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
         t3 = time_synchronized()
 
