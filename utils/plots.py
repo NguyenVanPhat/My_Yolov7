@@ -69,8 +69,8 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=3):
         cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
 def plot_one_box_center_point(xy_center, img, color=None, line_thickness=3):
-    xy_center[0] = int(xy_center[0]*img.shape[0])
-    xy_center[1] = int(xy_center[1] * img.shape[1])
+    xy_center[0] = int(xy_center[0]*img.shape[1])
+    xy_center[1] = int(xy_center[1] * img.shape[0])
     center_coordinates = (xy_center[0], xy_center[1])
     cv2.circle(img, center_coordinates, 40, color, -1)
 
