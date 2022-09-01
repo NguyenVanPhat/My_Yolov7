@@ -166,8 +166,8 @@ def detect(save_img=False):
         # với mỗi "pred"([1, 15120, 85]) bên trên non_max_suppression() sẽ trả ra một list of detections..
         # list này chứa duy nhất 1 Tensor có SHAPE=[n, 6] với n ở đây là số đối tượng phát hiện được..
         # trong image/frame. số 6 là số lượng thông số kỹ thuật cho mỗi object được phát hiện cụ thể..
-        # mỗi object là 1 row trong Tensor có dạng:..
-        # ------[x_toạ độ tâm, y_toạ độ tâm, chiều cao_boxes, chiều rộng_boxes, confident, classes]------
+        # mỗi object là 1 row trong Tensor có dạng ("bb" viết tắt của bounding boxes):..
+        # [toạ_độ_X_top_left_bb, toạ_độ_Y_top_left_bb, toạ_độ_X_bottom_right_bb, toạ_độ_Y_bottom_right_bb, confident, classes]
         # --> lưu ý: những thông số kỹ thuật trên (toạ độ tâm, chiều cao...) đều chưa được mã hoá thành định dạng..
         # theo chuẩn của Yolo, vẫn đang trình bày dưới dạng giá trị pixel và giá trị float
         pred = non_max_suppression(pred, opt.conf_thres, opt.iou_thres, classes=opt.classes, agnostic=opt.agnostic_nms)
@@ -196,23 +196,48 @@ def detect(save_img=False):
                 # Rescale boxes from img_size to im0 size
                 # "img.shape" có type: <class 'torch.Size'>; value: [1, 3, 384, 640]
                 # "im0.shape" có type: <class 'tuple'>; value: (1080, 1920, 3)
+                # "scale_coords()" sẽ chuyển giá trị phần tử trong "det" đang phù hợp với "img.shape"..
+                # thành giá trị mới phù hợp cho "im0.shape"..
+                # -> Ví dụ: img.shape[2:]=[384, 640] có det=[523.44592, 69.83182, 561.39929, 143.79759, 0.90688, 0.00000]..
+                # với im0.shape=(1080, 1920, 3) có det=[1570.0, 173.0, 1684.0, 395.0, 0.906877, 0.0]
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
                 # Print results
+                # Trong Ví dụ này chỉ phát hiện được 6 person nên "det[:, -1]=[0, 0, 0, 0, 0, 0]"
+                # "det[:, -1].unique()" tìm ra các giá trị khác nhau trong Tensor, nếu nhiều phần tử..
+                #  có value giống nhau chỉ lấy 1 ra làm đại diện..
+                # -> Ví dụ: tensor = [0, 0, 5] thì tensor.unique() trả ra 1 tensor khác có value=[0, 5]
                 for c in det[:, -1].unique():
+                    # "n" có value = 6 đại diện cho số lượng object được dectect
+                    # "s" có type=string; value="6 persons"
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
                 # Write results
+                # "reversed()" đảo ngược thứ tự row của Tensor truyền vào
+                # -> Ví dụ: - det = [[0, 1, 2],
+                #                  [3, 4, 5]]
+                #           - reversed(det) = [[3, 4, 5],
+                #                            [0, 1, 2]]
+                # "conf" nhận confidence của từng row trong "reversed(det)"
+                # "cls" nhận classes của từng row trong "reversed(det)"
+                # "*xyxy" trả ra n list (n là số lượng object được phát hiện), mỗi list chứa 4 tensor..
+                # mỗi tensor này chứa 4 giá trị đầu tiên trong mỗi row "det"..
+                # nhưng khi gọi "xyxy" sẽ chỉ trả về giá trị tương ứng với "conf" và "cls"
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
-
+                    # "save_img" mặc định là True
+                    # "view_img" mặc định là False và nếu đặt True thì vẫn ko show dc trên Colab
                     if save_img or view_img:  # Add bbox to image
+                        # "label" có type = string; value = "person 0.76"
+                        # value có dạng <Tên classes> + <confidence>;
                         label = f'{names[int(cls)]} {conf:.2f}'
+                        xywh_center = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        xywh_center = xywh_center[:2]
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
 
             # Print time (inference + NMS)
