@@ -15,7 +15,7 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
 
 
-def phat_print(name_variable, variable):
+def pprint(name_variable, variable):
     print("\n------------------------------------------ "+"BIẾN "+name_variable+" ------------------------------------------")
     try:
         print("TYPE: " + "---" + str(type(variable)) + "---")
@@ -110,7 +110,7 @@ def detect(save_img=False):
     t0 = time.time()
     # path là đường dẫn tới image/video đầu vào, không bị thay đổi trong suốt vòng lặp
     # -----------------------------------------------
-    # im0s là image đầu vào
+    # im0s là image đầu vào, đóng vai trò là image gốc để đối chiếu
     # nếu là video thì im0s sẽ lần lượt là từng frame trong video...
     # hình ảnh im0s có type: (numpy.ndarray)
     # có shape = (1080, 1920, 3)
@@ -178,10 +178,14 @@ def detect(save_img=False):
             pred = apply_classifier(pred, modelc, img, im0s)
 
         # Process detections
+        # enumerate(pred) sẽ lấy ra được Tensor[n, 6] nằm trong list "pred"
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
                 p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
             else:
+                # im0 chính là im0s là image đầu vào gốc để đối chiếu
+                # frame là số frame hiện tại trong tất cả frame có trong video..
+                # ví dụ: frame đầu tiên thì "frame = 1"
                 p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
             p = Path(p)  # to Path
@@ -190,6 +194,8 @@ def detect(save_img=False):
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             if len(det):
                 # Rescale boxes from img_size to im0 size
+                # "img.shape" có type: <class 'torch.Size'>; value: [1, 3, 384, 640]
+                # "im0.shape" có type: <class 'tuple'>; value: (1080, 1920, 3)
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
                 # Print results
