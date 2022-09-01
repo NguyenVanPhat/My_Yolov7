@@ -237,7 +237,7 @@ def detect(save_img=False):
                         # value có dạng <Tên classes> + <confidence>;
                         label = f'{names[int(cls)]} {conf:.2f}'
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        xywh = xywh[:2]
+
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
                         plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1)
 
