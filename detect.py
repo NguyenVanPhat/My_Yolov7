@@ -11,7 +11,7 @@ from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
 from utils.general import check_img_size, check_requirements, check_imshow, non_max_suppression, apply_classifier, \
     scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path
-from utils.plots import plot_one_box
+from utils.plots import plot_one_box, plot_one_box_center_point
 from utils.torch_utils import select_device, load_classifier, time_synchronized, TracedModel
 
 
@@ -236,9 +236,10 @@ def detect(save_img=False):
                         # "label" có type = string; value = "person 0.76"
                         # value có dạng <Tên classes> + <confidence>;
                         label = f'{names[int(cls)]} {conf:.2f}'
-                        xywh_center = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        xywh_center = xywh_center[:2]
+                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        xywh = xywh[:2]
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
+                        plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1)
 
             # Print time (inference + NMS)
             print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
