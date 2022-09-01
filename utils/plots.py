@@ -71,7 +71,7 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=3):
 def plot_one_box_center_point(xy_center, img, color=None, line_thickness=3):
     height = int(xy_center[-1]*img.shape[0])
     width = int(xy_center[-2] * img.shape[1])
-    radius = int(height*width/100)
+    radius = int(height*width/1000)
     print("radius: ", radius)
     xy_center = xy_center[:2]
     xy_center[0] = int(xy_center[0]*img.shape[1])
