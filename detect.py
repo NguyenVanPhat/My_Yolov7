@@ -239,7 +239,9 @@ def detect(save_img=False):
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
 
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
-                        plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1)
+                        if source.endswith(".mp4"):
+                            print("This is Video File")
+                            # plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1)
 
             # Print time (inference + NMS)
             print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')
