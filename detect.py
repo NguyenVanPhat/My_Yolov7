@@ -252,6 +252,7 @@ def detect(save_img=False):
                             label = f'{names[int(cls)]} {conf:.2f}'
                             plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
                             det_previous = xyxy2xywh_for_det_previous(det)
+                            pprint("det_previous", det_previous)
                             # if frame > 1:
                             #     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                             #     plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1, det_previous, cls, conf)
