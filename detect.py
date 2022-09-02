@@ -188,7 +188,7 @@ def detect(save_img=False):
                 # frame là số frame hiện tại trong tất cả frame có trong video..
                 # ví dụ: frame đầu tiên thì "frame = 1"
                 p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
-            print("frame = ", frame)
+            print("\nframe = ", frame)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # img.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
@@ -256,17 +256,19 @@ def detect(save_img=False):
                     if frame > 1:
                         for i in range(len(reversed(det))):
                                 xywh_current = (xyxy2xywh(torch.tensor(reversed(det)[i][:4]).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                                xywh_current.append(reversed(det)[i][-2].item())
+                                xywh_current.append(reversed(det)[i][-1].item())
                                 pprint("xywh_current", xywh_current)
                                 # xywh_previous = det_previous[i][:4]
                                 # pprint("xywh_previous", xywh_previous)
                                 print("i = ", i)
-                                pprint("det_previous", det_previous)
+                                pprint("det_previous", det_previous[i])
                                 # plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1, det_previous,
                                 #                           cls, conf)
                                 det_previous = xyxy2xywh_for_det_previous(det)
                     else:
                         det_previous = xyxy2xywh_for_det_previous(det)
-                        pprint("det_previous first time", det_previous)
+                        # pprint("det_previous first time", det_previous)
                 else:
                     for *xyxy, conf, cls in reversed(det):
                         if save_txt:  # Write to file
