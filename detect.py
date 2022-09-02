@@ -229,15 +229,15 @@ def detect(save_img=False):
                     # mỗi tensor này chứa 4 giá trị đầu tiên trong mỗi row "det"..
                     # nhưng khi gọi "xyxy" sẽ chỉ trả về giá trị tương ứng với "conf" và "cls"
                     def xyxy2xywh_for_det_previous(det):
-                        det_previous = []
+                        det_previous_temp = []
                         # for *xyxy, conf, cls in reversed(det):
                         for i in range(len(reversed(det))):
                             xywh = (xyxy2xywh(torch.tensor(reversed(det)[i][:4]).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                             xywh.append(reversed(det)[i][-2].item())
                             xywh.append(reversed(det)[i][-1].item())
                             # line = (xywh, reversed(det)[i][-2], reversed(det)[i][-1])  # label format
-                            det_previous.append(xywh)
-                        return det_previous
+                            det_previous_temp.append(xywh)
+                        return det_previous_temp
 
 
                     for *xyxy, conf, cls in reversed(det):
@@ -254,18 +254,20 @@ def detect(save_img=False):
                             label = f'{names[int(cls)]} {conf:.2f}'
                             plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
 
-                    for i in range(len(reversed(det))):
-                        if frame > 1:
-                            xywh_current = (xyxy2xywh(torch.tensor(reversed(det)[i][:4]).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                            pprint("xywh_current", xywh_current)
-                            # xywh_previous = det_previous[i][:4]
-                            # pprint("xywh_previous", xywh_previous)
-                            pprint("det_previous", det_previous[i])
-                            # plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1, det_previous,
-                            #                           cls, conf)
-                            det_previous = xyxy2xywh_for_det_previous(det)
-                        else:
-                            det_previous = xyxy2xywh_for_det_previous(det)
+                    if frame > 1:
+                        for i in range(len(reversed(det))):
+                                xywh_current = (xyxy2xywh(torch.tensor(reversed(det)[i][:4]).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                                pprint("xywh_current", xywh_current)
+                                # xywh_previous = det_previous[i][:4]
+                                # pprint("xywh_previous", xywh_previous)
+                                print("i = ", i)
+                                print("frame = ", frame)
+                                pprint("det_previous", det_previous)
+                                # plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1, det_previous,
+                                #                           cls, conf)
+                                det_previous = xyxy2xywh_for_det_previous(det)
+                    else:
+                        det_previous = xyxy2xywh_for_det_previous(det)
                 else:
                     for *xyxy, conf, cls in reversed(det):
                         if save_txt:  # Write to file
