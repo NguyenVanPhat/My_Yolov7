@@ -121,6 +121,7 @@ def detect(save_img=False):
     # giả sử đầu vào có shape = (1080, 1920, 3) thì img sẽ chỉ còn shape = (3, 384, 640)
     # -----------------------------------------------
     # vid_cap có type: class 'cv2.VideoCapture'
+    frame_Phat = None
     for path, img, im0s, vid_cap in dataset:
         # đang chỉnh sửa từng image từ trong "dataset" trước khi đưa vào model để predict
         img = torch.from_numpy(img).to(device)
@@ -213,35 +214,65 @@ def detect(save_img=False):
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
 
-                # Write results
-                # "reversed()" đảo ngược thứ tự row của Tensor truyền vào
-                # -> Ví dụ: - det = [[0, 1, 2],
-                #                  [3, 4, 5]]
-                #           - reversed(det) = [[3, 4, 5],
-                #                            [0, 1, 2]]
-                # "conf" nhận confidence của từng row trong "reversed(det)"
-                # "cls" nhận classes của từng row trong "reversed(det)"
-                # "*xyxy" trả ra n list (n là số lượng object được phát hiện), mỗi list chứa 4 tensor..
-                # mỗi tensor này chứa 4 giá trị đầu tiên trong mỗi row "det"..
-                # nhưng khi gọi "xyxy" sẽ chỉ trả về giá trị tương ứng với "conf" và "cls"
-                for *xyxy, conf, cls in reversed(det):
-                    if save_txt:  # Write to file
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                        line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
-                        with open(txt_path + '.txt', 'a') as f:
-                            f.write(('%g ' * len(line)).rstrip() % line + '\n')
-                    # "save_img" mặc định là True
-                    # "view_img" mặc định là False và nếu đặt True thì vẫn ko show dc trên Colab
-                    if save_img or view_img:  # Add bbox to image
-                        # "label" có type = string; value = "person 0.76"
-                        # value có dạng <Tên classes> + <confidence>;
-                        label = f'{names[int(cls)]} {conf:.2f}'
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                if source.endswith(".mp4"):
+                    print("This is Video File")
+                    det_previous = None
+                    # Write results
+                    # "reversed()" đảo ngược thứ tự row của Tensor truyền vào
+                    # -> Ví dụ: - det = [[0, 1, 2],
+                    #                  [3, 4, 5]]
+                    #           - reversed(det) = [[3, 4, 5],
+                    #                            [0, 1, 2]]
+                    # "conf" nhận confidence của từng row trong "reversed(det)"
+                    # "cls" nhận classes của từng row trong "reversed(det)"
+                    # "*xyxy" trả ra n list (n là số lượng object được phát hiện), mỗi list chứa 4 tensor..
+                    # mỗi tensor này chứa 4 giá trị đầu tiên trong mỗi row "det"..
+                    # nhưng khi gọi "xyxy" sẽ chỉ trả về giá trị tương ứng với "conf" và "cls"
+                    def xyxy2xywh_for_det_previous(det):
+                        det_previous = []
+                        # for *xyxy, conf, cls in reversed(det):
+                        for i in range(len(reversed(det))):
+                            xywh = (xyxy2xywh(torch.tensor(reversed(det)[i][:4]).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                            line = (xywh, reversed(det)[i][4:])  # label format
+                            det_previous.append(line)
+                        return det_previous
 
-                        plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
-                        if source.endswith(".mp4"):
-                            print("This is Video File")
-                            # plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1)
+
+                    for *xyxy, conf, cls in reversed(det):
+                        if save_txt:  # Write to file
+                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                            line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
+                            with open(txt_path + '.txt', 'a') as f:
+                                f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        # "save_img" mặc định là True
+                        # "view_img" mặc định là False và nếu đặt True thì vẫn ko show dc trên Colab
+                        if save_img or view_img:  # Add bbox to image
+                            # "label" có type = string; value = "person 0.76"
+                            # value có dạng <Tên classes> + <confidence>;
+                            label = f'{names[int(cls)]} {conf:.2f}'
+                            plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
+                            det_previous = xyxy2xywh_for_det_previous(det)
+                            # if frame > 1:
+                            #     xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                            #     plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1, det_previous, cls, conf)
+                            #     det_previous = xyxy2xywh_for_det_previous(det)
+                            # else:
+                            #     det_previous = xyxy2xywh_for_det_previous(det)
+                else:
+                    for *xyxy, conf, cls in reversed(det):
+                        if save_txt:  # Write to file
+                            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                            line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
+                            with open(txt_path + '.txt', 'a') as f:
+                                f.write(('%g ' * len(line)).rstrip() % line + '\n')
+                        # "save_img" mặc định là True
+                        # "view_img" mặc định là False và nếu đặt True thì vẫn ko show dc trên Colab
+                        if save_img or view_img:  # Add bbox to image
+                            # "label" có type = string; value = "person 0.76"
+                            # value có dạng <Tên classes> + <confidence>;
+                            label = f'{names[int(cls)]} {conf:.2f}'
+                            plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=1)
+
 
             # Print time (inference + NMS)
             print(f'{s}Done. ({(1E3 * (t2 - t1)):.1f}ms) Inference, ({(1E3 * (t3 - t2)):.1f}ms) NMS')

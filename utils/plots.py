@@ -68,7 +68,9 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=3):
         cv2.rectangle(img, c1, c2, color, -1, cv2.LINE_AA)  # filled
         cv2.putText(img, label, (c1[0], c1[1] - 2), 0, tl / 3, [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
 
-def plot_one_box_center_point(xy_center, img, color=None, line_thickness=3):
+def plot_one_box_center_point(xy_center, img, color=None, line_thickness=3, det_previous, cls, conf):
+
+
     height = int(xy_center[-1]*img.shape[0])
     width = int(xy_center[-2] * img.shape[1])
     radius = int((height*width/1000)*0.5)
@@ -77,6 +79,7 @@ def plot_one_box_center_point(xy_center, img, color=None, line_thickness=3):
     xy_center[1] = int(xy_center[1] * img.shape[0])
     center_coordinates = (xy_center[0], xy_center[1])
     cv2.circle(img, center_coordinates, radius, color, -1)
+
 
 
 def plot_one_box_PIL(box, img, color=None, label=None, line_thickness=None):
