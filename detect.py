@@ -216,7 +216,6 @@ def detect(save_img=False):
 
                 if source.endswith(".mp4"):
                     print("This is Video File")
-                    det_previous = None
                     # Write results
                     # "reversed()" đảo ngược thứ tự row của Tensor truyền vào
                     # -> Ví dụ: - det = [[0, 1, 2],
