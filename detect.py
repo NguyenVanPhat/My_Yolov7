@@ -258,8 +258,9 @@ def detect(save_img=False):
                         if frame > 1:
                             xywh_current = (xyxy2xywh(torch.tensor(reversed(det)[i][:4]).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                             pprint("xywh_current", xywh_current)
-                            xywh_previous = det_previous[i][:4]
-                            pprint("xywh_previous", xywh_previous)
+                            # xywh_previous = det_previous[i][:4]
+                            # pprint("xywh_previous", xywh_previous)
+                            print("det_previous[i]", det_previous[i])
                             # plot_one_box_center_point(xywh, im0, color=colors[int(cls)], line_thickness=1, det_previous,
                             #                           cls, conf)
                             det_previous = xyxy2xywh_for_det_previous(det)
