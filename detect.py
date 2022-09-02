@@ -233,8 +233,10 @@ def detect(save_img=False):
                         # for *xyxy, conf, cls in reversed(det):
                         for i in range(len(reversed(det))):
                             xywh = (xyxy2xywh(torch.tensor(reversed(det)[i][:4]).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-                            line = (xywh, reversed(det)[i][-2], reversed(det)[i][-1])  # label format
-                            det_previous.append(line)
+                            xywh.append(reversed(det)[i][-2][0])
+                            xywh.append(reversed(det)[i][-1][0])
+                            # line = (xywh, reversed(det)[i][-2], reversed(det)[i][-1])  # label format
+                            det_previous.append(xywh)
                         return det_previous
 
 
