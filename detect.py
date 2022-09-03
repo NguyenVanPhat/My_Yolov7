@@ -187,7 +187,7 @@ def detect(save_img=False):
                 # frame là số frame hiện tại trong tất cả frame có trong video..
                 # ví dụ: frame đầu tiên thì "frame = 1"
                 p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
-            print("\nframe = ", frame)
+            # print("\nframe = ", frame)
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # img.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
